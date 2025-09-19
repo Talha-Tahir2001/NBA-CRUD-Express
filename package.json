@@ -13,6 +13,7 @@
   "description": "A simple CRUD application for NBA players using Express.js and Node.js.",
   "dependencies": {
     "express": "^5.1.0",
+    "morgan": "^1.10.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
