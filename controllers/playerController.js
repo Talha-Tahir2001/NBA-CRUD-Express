@@ -1,163 +1,158 @@
 import { v4 as uuidv4 } from "uuid";
-
-let players = [
-    {
-        id: uuidv4(),
-        firstName: "LeBron",
-        lastName: "James",
-        position: "Small Forward",
-        team: "Los Angeles Lakers",
-        number: 23,
-        height: "6 ft 9 in",
-        weight: "250 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Stephen",
-        lastName: "Curry",
-        position: "Point Guard",
-        team: "Golden State Warriors",
-        number: 30,
-        height: "6 ft 3 in",
-        weight: "185 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Kevin",
-        lastName: "Durant",
-        position: "Power Forward",
-        team: "Brooklyn Nets",
-        number: 7,
-        height: "6 ft 10 in",
-        weight: "240 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Kyrie",
-        lastName: "Irving",
-        position: "Shooting Guard",
-        team: "Brooklyn Nets",
-        number: 11,
-        height: "6 ft 3 in",
-        weight: "190 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Giannis",
-        lastName: "Antetokounmpo",
-        position: "Power Forward",
-        team: "Milwaukee Bucks",
-        number: 34,
-        height: "6 ft 11 in",
-        weight: "242 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "James",
-        lastName: "Harden",
-        position: "Shooting Guard",
-        team: "Philadelphia 76ers",
-        number: 1,
-        height: "6 ft 5 in",
-        weight: "220 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Luka",
-        lastName: "Doncic",
-        position: "Point Guard",
-        team: "Dallas Mavericks",
-        number: 77,
-        height: "6 ft 7 in",
-        weight: "230 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Anthony",
-        lastName: "Davis",
-        position: "Power Forward",
-        team: "Los Angeles Lakers",
-        number: 3,
-        height: "6 ft 10 in",
-        weight: "253 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Damian",
-        lastName: "Lillard",
-        position: "Point Guard",
-        team: "Portland Trail Blazers",
-        number: 0,
-        height: "6 ft 2 in",
-        weight: "195 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Joel",
-        lastName: "Embiid",
-        position: "Center",
-        team: "Philadelphia 76ers",
-        number: 21,
-        height: "7 ft 0 in",
-        weight: "280 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Chris",
-        lastName: "Paul",
-        position: "Point Guard",
-        team: "Phoenix Suns",
-        number: 3,
-        height: "6 ft 1 in",
-        weight: "175 lbs",
-    },
-    {
-        id: uuidv4(),
-        firstName: "Zion",
-        lastName: "Williamson",
-        position: "Power Forward",
-        team: "New Orleans Pelicans",
-        number: 1,
-        height: "6 ft 6 in",
-        weight: "284 lbs",
-    },
-];
+import Player from "../models/Player.js";
 
 
 
 
-export const getAllPlayers = (req, res) => {
-  res.json(players);
-};
 
-export const getPlayerById = (req, res) => {
-  const player = players.find(p => p.id === req.params.id);
-  if (!player) return res.status(404).json({ error: "Player not found" });
-  res.json(player);
-};
+export const getAllPlayers = async (req, res) => {
+    try {
+        const players = await Player.find().sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            count: players.length,
+            data: players
+        });
+    } catch (error) {
+        console.error('Get all players error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Server error while fetching players'
+        });
+    }
 
-export const createPlayer = (req, res) => {
-  const { firstName, lastName, team } = req.body;
-  if (!firstName || !lastName || !team) {
-    return res.status(400).json({ error: "firstName, lastName and team are required" });
-  }
-  const newPlayer = { id: uuidv4(), ...req.body };
-  players.push(newPlayer);
-  res.status(201).json(newPlayer);
-};
+}
 
-export const updatePlayer = (req, res) => {
-  const playerIndex = players.findIndex(p => p.id === req.params.id);
-  if (playerIndex === -1) return res.status(404).json({ error: "Player not found" });
+export const getPlayerById = async (req, res) => {
+    try {
+        const player = await Player.findById(req.params.id);
+        if (!player) {
+            return res.status(404).json({
+                success: false,
+                error: `Player not found with id: ${req.params.id}`
+            });
+        }
+        res.json({
+            success: true,
+            data: player
+        });
+    } catch (error) {
+        console.error('Get player by ID error:', error);
 
-  players[playerIndex] = { ...players[playerIndex], ...req.body };
-  res.json(players[playerIndex]);
-};
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid player ID format'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Server error while fetching player'
+        });
+    }
+}
 
-export const deletePlayer = (req, res) => {
-  const playerIndex = players.findIndex(p => p.id === req.params.id);
-  if (playerIndex === -1) return res.status(404).json({ error: "Player not found" });
+export const createPlayer = async (req, res) => {
+    try {
+        // const { firstName, lastName, position, team, number } = req.body;
 
-  const deletedPlayer = players.splice(playerIndex, 1);
-  res.status(200).json(deletedPlayer[0]);
-};
+        // if (!firstName || !lastName || !position || !team || !number) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         error: 'Missing required fields: firstName, lastName, position, team, number'
+        //     });
+        // }
+        const player = new Player(req.body);
+        await player.save();
+        res.status(201).json({
+            success: true,
+            message: 'Player created successfully',
+            data: player
+        });
+    } catch (error) {
+        console.error('Create player error:', error);
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                error: errors.join(', ')
+            });
+        }
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+export const updatePlayer = async (req, res) => {
+    try {
+        const player = await Player.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { 
+                new: true, 
+                runValidators: true 
+            }
+        );
+        if (!player) {
+            return res.status(404).json({
+                success: false,
+                error: `Player not found with id: ${req.params.id}`
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: player
+        });
+    } catch (error) {
+        console.error('Update player error:', error);
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                success: false,
+                error: errors.join(', ')
+            });
+        }
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid player ID format'
+            });
+        }
+        res.status(400).json({
+            success: false,
+            error: error.message 
+        });
+    }
+}
+
+export const deletePlayer = async (req, res) => {
+    try {
+        const player = await Player.findByIdAndDelete(req.params.id);
+        if (!player) {
+            return res.status(404).json({
+                success: false,
+                error: `Player not found with id: ${req.params.id}`
+            });
+        }
+        res.json({
+            success: true,
+            message: 'Player deleted successfully',
+            data: player
+        });
+    } catch (error) {
+        console.error('Delete player error:', error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid player ID format'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Server error while deleting player'
+        });
+    }
+}
