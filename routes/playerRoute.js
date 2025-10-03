@@ -6,8 +6,8 @@ import {
   getPlayerById,
   updatePlayer,
 } from "../controllers/playerController.js";
-import { validatePlayer } from "../Middleware/validatePlayer.js";
 
+import { validatePlayer } from "../middleware/validatePlayer.js";
 const router = express.Router();
 
 /**
