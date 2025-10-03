@@ -1,18 +1,15 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
-
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
-
 import playerRoutes from './routes/playerRoute.js';
 import connectDB from './config/DB.js';
+import dotenv from 'dotenv'
 
-import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const port = 3000;
 
 const options = {
   definition: {
@@ -24,14 +21,18 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:3000", 
+        url: process.env.NODE_ENV === 'production' 
+          ? `https://${process.env.VERCEL_URL}` 
+          : "http://localhost:3000",
       },
     ],
   },
   apis: ["./routes/*.js"],
 };
 
+// Connect to MongoDB
 connectDB();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -44,16 +45,34 @@ app.get("/swagger.json", (req, res) => {
   res.send(swaggerSpec);
 });
 
-
 app.use('/api', playerRoutes);
 
 app.get('/', (req, res) => {
-  res.send('Welcome to the NBA CRUD API');
+  res.json({ 
+    message: 'Welcome to the NBA CRUD API',
+    docs: '/api-docs',
+    health: 'OK'
+  });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-  console.log(`Swagger docs at http://localhost:${port}/api-docs`);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV 
+  });
 });
 
+// Vercel requires module.exports for serverless functions
 export default app;
+
+// For Vercel serverless
+const port = process.env.PORT || 3000;
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+    console.log(`Swagger docs at http://localhost:${port}/api-docs`);
+  });
+}
